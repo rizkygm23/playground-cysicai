@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/alert-dialog"
 
 const models = {
-  gemini: ["gemini-2.5-flash", "gemini-2.5-pro"],
+  gemini: ["gemini-2.5-flash"],
   cysic: [
     "QwQ-32B-Q4_K_M",
     "Meta-Llama-3-8B-Instruct",
@@ -38,6 +38,26 @@ interface Message {
   role: "user" | "assistant"
   timestamp: Date
   model?: string
+}
+
+// Suggestion prompts - randomized order
+const suggestionPrompts = [
+  "How does Cysic scale large ML models in ZK?",
+  "What makes Cysic's prover faster than traditional ones?",
+  "Compare Cysic vs SP1 vs RiscZero in ZK proving.",
+  "Explain zkML in simple terms.",
+  "What's the role of ASIC in Cysic's architecture?",
+  "How does Cysic handle AI model inference?",
+]
+
+// Function to shuffle array
+const shuffleArray = (array: string[]) => {
+  const shuffled = [...array]
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+  }
+  return shuffled
 }
 
 // Simple markdown parser for basic formatting
@@ -87,6 +107,7 @@ export default function Home() {
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const [showCysicAlert, setShowCysicAlert] = useState(false)
+  const [shuffledSuggestions, setShuffledSuggestions] = useState<string[]>([])
 
   // Cysic API Key settings
   const [cysicApiKeyMode, setCysicApiKeyMode] = useState<"default" | "custom">("default")
@@ -107,6 +128,86 @@ export default function Home() {
       textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`
     }
   }, [prompt])
+
+  // Initialize and reshuffle suggestions
+  useEffect(() => {
+    setShuffledSuggestions(shuffleArray(suggestionPrompts))
+  }, [])
+
+  // Reshuffle suggestions after each message
+  useEffect(() => {
+    if (messages.length > 0) {
+      setShuffledSuggestions(shuffleArray(suggestionPrompts))
+    }
+  }, [messages.length])
+
+  const handleSuggestionClick = async (suggestion: string) => {
+    if (loading) return
+
+    // Validate custom API key for Cysic
+    if (provider === "cysic" && cysicApiKeyMode === "custom" && !customCysicApiKey.trim()) {
+      alert("Please enter your Cysic API key or use default key")
+      return
+    }
+
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      content: suggestion,
+      role: "user",
+      timestamp: new Date(),
+    }
+
+    setMessages((prev) => [...prev, userMessage])
+    setLoading(true)
+
+    try {
+      const conversationHistory = messages.map((msg) => ({
+        role: msg.role === "user" ? "user" : "assistant",
+        content: msg.content,
+      }))
+
+      const requestBody: any = {
+        prompt: suggestion,
+        model,
+        messages: conversationHistory,
+      }
+
+      // Add custom API key for Cysic if needed
+      if (provider === "cysic" && cysicApiKeyMode === "custom") {
+        requestBody.customApiKey = customCysicApiKey
+      }
+
+      const res = await fetch("/api/ai", {
+        method: "POST",
+        body: JSON.stringify(requestBody),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      })
+      const data = await res.json()
+
+      const assistantMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        content: data?.text || data?.response || "No response received",
+        role: "assistant",
+        timestamp: new Date(),
+        model: model,
+      }
+
+      setMessages((prev) => [...prev, assistantMessage])
+    } catch (err) {
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        content: "Sorry, I encountered an error while processing your request.",
+        role: "assistant",
+        timestamp: new Date(),
+        model: model,
+      }
+      setMessages((prev) => [...prev, errorMessage])
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -218,6 +319,7 @@ export default function Home() {
         /* Webkit browsers (Chrome, Safari, Edge) */
         ::-webkit-scrollbar {
           width: 8px;
+          height: 8px;
         }
 
         ::-webkit-scrollbar-track {
@@ -390,7 +492,7 @@ export default function Home() {
                   {getProviderLogo(provider)}
                 </div>
                 <h2 className="text-2xl font-bold mb-2">Start a conversation</h2>
-                <p className="text-gray-400 max-w-md">
+                <p className="text-gray-400 max-w-md mb-8">
                   Ask me anything! I'm powered by {provider === "gemini" ? "Gemini" : "Cysic"} AI and ready to help.
                 </p>
               </div>
@@ -469,6 +571,29 @@ export default function Home() {
                 </Card>
               </div>
             )}
+
+            {/* Always show suggestion prompts */}
+            {shuffledSuggestions.length > 0 && (
+              <div className="border-t border-gray-800 pt-4 mt-4">
+                <h3 className="text-sm font-medium text-gray-300 mb-3">
+                  {messages.length === 0 ? "Try asking about:" : "Ask something else:"}
+                </h3>
+                <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-thin">
+                  {shuffledSuggestions.map((suggestion, index) => (
+                    <Button
+                      key={`${suggestion}-${index}`}
+                      variant="outline"
+                      onClick={() => handleSuggestionClick(suggestion)}
+                      disabled={loading}
+                      className="flex-shrink-0 text-xs px-3 py-2 h-auto whitespace-nowrap border-[#00FFCD] text-[#00FFCD] bg-[#00FFCD]/10 disabled:opacity-50 hover:text-[#266d5f]"
+                    >
+                      {suggestion}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div ref={messagesEndRef} />
           </div>
         </div>
