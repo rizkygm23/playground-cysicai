@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/alert-dialog"
 
 const models = {
-  gemini: ["gemini-2.5-flash"],
+  gemini: ["gemini-2.5-flash", "gemini-2.5-pro"],
   cysic: [
     "QwQ-32B-Q4_K_M",
     "Meta-Llama-3-8B-Instruct",
