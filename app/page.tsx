@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState, useRef, useEffect } from "react"
 import { Send, Bot, User, Settings, Key, ExternalLink } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -98,8 +97,8 @@ const parseMarkdown = (text: string) => {
 }
 
 export default function Home() {
-  const [provider, setProvider] = useState<"gemini" | "cysic">("gemini")
-  const [model, setModel] = useState("gemini-2.5-flash")
+  const [provider, setProvider] = useState<"gemini" | "cysic">("cysic")
+  const [model, setModel] = useState("Meta-Llama-3-8B-Instruct")
   const [prompt, setPrompt] = useState("")
   const [messages, setMessages] = useState<Message[]>([])
   const [loading, setLoading] = useState(false)
@@ -184,6 +183,7 @@ export default function Home() {
           "Content-Type": "application/json",
         },
       })
+
       const data = await res.json()
 
       const assistantMessage: Message = {
@@ -254,6 +254,7 @@ export default function Home() {
           "Content-Type": "application/json",
         },
       })
+
       const data = await res.json()
 
       const assistantMessage: Message = {
@@ -303,11 +304,17 @@ export default function Home() {
 
   const getProviderLogo = (provider: string) => {
     if (provider === "gemini") {
-      return <Image src="/gemini-logo.svg" alt="Gemini" width={20} height={20} />
+      return <Image src="/gemini-logo.svg?height=20&width=20&text=G" alt="Gemini" width={20} height={20} />
     }
     return (
       <div className="w-5 h-5 relative bg-[#090A09] rounded-md flex items-center justify-center">
-        <Image src="/cysic-logo.png" alt="Cysic" width={20} height={20} className="object-contain rounded-sm" />
+        <Image
+          src="/cysic-logo.png?height=20&width=20&text=C"
+          alt="Cysic"
+          width={20}
+          height={20}
+          className="object-contain rounded-sm"
+        />
       </div>
     )
   }
@@ -321,27 +328,22 @@ export default function Home() {
           width: 8px;
           height: 8px;
         }
-
         ::-webkit-scrollbar-track {
           background: #1f2937;
           border-radius: 4px;
         }
-
         ::-webkit-scrollbar-thumb {
           background: linear-gradient(135deg, #00ffcd, #6b2ce1);
           border-radius: 4px;
           transition: all 0.2s ease;
         }
-
         ::-webkit-scrollbar-thumb:hover {
           background: linear-gradient(135deg, #00ffcd, #8b5cf6);
           transform: scale(1.1);
         }
-
         ::-webkit-scrollbar-corner {
           background: #1f2937;
         }
-
         /* Firefox */
         * {
           scrollbar-width: thin;
@@ -413,7 +415,6 @@ export default function Home() {
                 <Key className="w-4 h-4 text-[#00FFCD]" />
                 <h3 className="text-sm font-medium">Cysic API Key Settings</h3>
               </div>
-
               <div className="flex gap-2 mb-3">
                 <Button
                   type="button"
@@ -442,7 +443,6 @@ export default function Home() {
                   Use my own API key
                 </Button>
               </div>
-
               {cysicApiKeyMode === "custom" && (
                 <div className="space-y-2">
                   <Textarea
@@ -509,7 +509,6 @@ export default function Home() {
                       <Bot className="w-4 h-4 text-white" />
                     </div>
                   )}
-
                   <div className={`max-w-[70%] ${message.role === "user" ? "order-1" : ""}`}>
                     <Card
                       className={`p-4 ${
@@ -536,7 +535,6 @@ export default function Home() {
                       {message.timestamp.toLocaleTimeString()}
                     </div>
                   </div>
-
                   {message.role === "user" && (
                     <div className="w-8 h-8 rounded-full bg-gradient-to-r from-gray-600 to-gray-700 flex items-center justify-center flex-shrink-0 mt-1">
                       <User className="w-4 h-4 text-white" />
@@ -545,7 +543,6 @@ export default function Home() {
                 </div>
               ))
             )}
-
             {loading && (
               <div className="flex gap-3 justify-start">
                 <div
@@ -593,7 +590,6 @@ export default function Home() {
                 </div>
               </div>
             )}
-
             <div ref={messagesEndRef} />
           </div>
         </div>
